@@ -1231,11 +1231,11 @@
           <div style="display:flex; gap:10px; flex-wrap:wrap;">
             <label style="flex:1; min-width:160px; display:flex; align-items:center; gap:10px; padding:12px 14px; border:2px solid #d9dfcc; border-radius:8px; cursor:pointer; background:#fafdf6;">
               <input type="radio" name="contractType" value="sydney" checked onchange="onContractChange()" style="accent-color:#4a7a3c; width:18px; height:18px;">
-              <div><strong>🌏 All States</strong><br><span style="font-size:.78rem; color:#666;">NSW · ACT · QLD · VIC · 38 pages</span></div>
+              <div><strong>🌏 All States</strong><br><span style="font-size:.78rem; color:#666;">NSW · ACT · QLD · VIC</span></div>
             </label>
             <label style="flex:1; min-width:160px; display:flex; align-items:center; gap:10px; padding:12px 14px; border:2px solid #d9dfcc; border-radius:8px; cursor:pointer; background:#fafdf6;">
               <input type="radio" name="contractType" value="selfmanaged" onchange="onContractChange()" style="accent-color:#4a7a3c; width:18px; height:18px;">
-              <div><strong>🤝 Self-Managed</strong><br><span style="font-size:.78rem; color:#666;">SM · 43 pages</span></div>
+              <div><strong>🤝 Self-Managed</strong><br><span style="font-size:.78rem; color:#666;">SM</span></div>
             </label>
           </div>
         </div>
@@ -1849,6 +1849,25 @@ async function _generateServiceAgreementPdf(wantBlob){
         }
       });
     });
+
+    // ── Page numbers ────────────────────────────────────────────────
+    // Add "Page X of Y" footer to every page AFTER autoPaging finishes.
+    try {
+      const pageCount = pdf.getNumberOfPages();
+      const pageWidthPt  = pdf.internal.pageSize.getWidth();
+      const pageHeightPt = pdf.internal.pageSize.getHeight();
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(9);
+      pdf.setTextColor(110, 110, 110);
+      for (let i = 1; i <= pageCount; i++) {
+        pdf.setPage(i);
+        const label = 'Page ' + i + ' of ' + pageCount;
+        const w = pdf.getTextWidth(label);
+        // Right-aligned in the bottom margin band
+        pdf.text(label, pageWidthPt - MARGIN_X - w, pageHeightPt - 14);
+      }
+      console.log('[PDF] page numbers stamped on', pageCount, 'page(s)');
+    } catch(e){ console.warn('[PDF] page-number stamping failed:', e); }
 
     if (wantBlob) {
       const blob = pdf.output('blob');
