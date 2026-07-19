@@ -178,6 +178,40 @@
   input.ff-inline:focus { background: #eef4ff; border-bottom-color: #0d6efd; border-radius: 2px 2px 0 0; }
   @media print { input.ff-inline { border-bottom: 1.5px solid #1a4f8a !important; background: transparent !important; } }
 
+  /* Print-time shim — replaces each ff-inline <input> with a wrapping <span>
+     so long content (addresses, names, etc.) doesn't get clipped by the
+     fixed-width input rendering the browser uses when printing. */
+  .ff-inline-print-shim { display: none; }
+  @media print {
+    .ff-inline-print-shim {
+      display: inline;
+      border-bottom: 1.5px solid #1a4f8a;
+      padding: 0 4px 1px;
+      color: #1a4f8a; font-weight: 600;
+      white-space: normal;
+      overflow-wrap: break-word;
+      word-break: break-word;
+    }
+  }
+  body.print-active .ff-inline-print-shim {
+    display: inline;
+    border-bottom: 1.5px solid #1a4f8a;
+    padding: 0 4px 1px;
+    color: #1a4f8a; font-weight: 600;
+    white-space: normal;
+    overflow-wrap: break-word;
+  }
+  body.print-active input.ff-inline { display: none !important; }
+  body.pdf-rendering .ff-inline-print-shim {
+    display: inline;
+    border-bottom: 1.5px solid #1a4f8a;
+    padding: 0 4px 1px;
+    color: #1a4f8a; font-weight: 600;
+    white-space: normal;
+    overflow-wrap: break-word;
+  }
+  body.pdf-rendering input.ff-inline { display: none !important; }
+
   /* ── Signature slots in docs ── */
   .sig-slot {
     display: inline-flex; align-items: center; justify-content: center;
@@ -1685,6 +1719,35 @@ window.addEventListener('beforeprint', () => {
     d.setAttribute('open',''); _printOpenedDetails.push(d);
   });
 });
+
+// ── PRINT SHIM: replace <input class="ff-inline"> with <span> before print ──
+// The browser prints inputs at their fixed on-screen width — long addresses,
+// names, or wrapped text get cut off at the right edge. We hide each input
+// and insert a matching <span> that inherits normal text flow, so content
+// wraps naturally in the printed document.
+function _prepareInlineInputsForPrint(){
+  document.body.classList.add('print-active');
+  document.querySelectorAll('input.ff-inline').forEach(el => {
+    if (el.__printShim) return;
+    const span = document.createElement('span');
+    span.className = 'ff-inline-print-shim';
+    const val = el.value || el.getAttribute('placeholder') || '';
+    span.textContent = val;
+    el.__printShim = span;
+    el.parentNode.insertBefore(span, el);
+  });
+}
+function _restoreInlineInputsAfterPrint(){
+  document.body.classList.remove('print-active');
+  document.querySelectorAll('input.ff-inline').forEach(el => {
+    if (el.__printShim && el.__printShim.parentNode) {
+      el.__printShim.parentNode.removeChild(el.__printShim);
+    }
+    el.__printShim = null;
+  });
+}
+window.addEventListener('beforeprint', _prepareInlineInputsForPrint);
+window.addEventListener('afterprint',  _restoreInlineInputsAfterPrint);
 
 function printSelected(){
   // First, open any external standalone forms in new tabs with ?print=1
@@ -3378,6 +3441,7 @@ function doc5_Sydney(name, address, street, suburb, postcode, mobile, phone, ema
         <tr><td>Registered Nurse Telehealth</td><td>$110</td><td>$130</td><td>$165</td><td>$220</td><td>$275</td></tr>
         <tr><td>Enrolled Nurse Home Visit</td><td>$140</td><td>$165</td><td>$210</td><td>$280</td><td>$350</td></tr>
         <tr><td>Nursing Assistant Service</td><td>$110</td><td>$130</td><td>$165</td><td>$220</td><td>$275</td></tr>
+        <tr><td>Nursing Care Consumables</td><td colspan="5">Actual Cost</td></tr>
       </table>
 
       <p style="font-size:.85rem;font-weight:700;color:var(--odc-green);margin-top:10px;">Allied Health and Therapy (Standard Hours)</p>
@@ -3408,7 +3472,7 @@ function doc5_Sydney(name, address, street, suburb, postcode, mobile, phone, ema
       <table class="doc-table" style="font-size:.82rem;">
         <tr style="background:#eaf2e6;font-weight:700;"><td>Service</td><td>Standard</td><td>After Hours</td><td>Saturday</td><td>Sunday</td><td>Public Holiday</td></tr>
         <tr><td>Individual social support</td><td>$100</td><td>$116</td><td>$145</td><td>$190</td><td>$235</td></tr>
-        <tr><td>Day Care Centre (per visit &#8211; Our Client)</td><td colspan="5">$50</td></tr>
+        <tr><td>Day Care Centre (per visit &#8211; Our Client)</td><td colspan="5">$30</td></tr>
         <tr><td>Day Care Centre (per visit &#8211; External Client)</td><td colspan="5">$120</td></tr>
       </table>
 
@@ -4135,6 +4199,7 @@ function doc5_Others(name, address, street, suburb, postcode, mobile, phone, ema
         <tr><td>Registered Nurse Telehealth</td><td>$110</td><td>$130</td><td>$165</td><td>$220</td><td>$275</td></tr>
         <tr><td>Enrolled Nurse Home Visit</td><td>$140</td><td>$165</td><td>$210</td><td>$280</td><td>$350</td></tr>
         <tr><td>Nursing Assistant Service</td><td>$110</td><td>$130</td><td>$165</td><td>$220</td><td>$275</td></tr>
+        <tr><td>Nursing Care Consumables</td><td colspan="5">Actual Cost</td></tr>
       </table>
 
       <p style="font-size:.85rem;font-weight:700;color:var(--odc-green);margin-top:10px;">Allied Health and Therapy (Standard Hours)</p>
@@ -4165,7 +4230,7 @@ function doc5_Others(name, address, street, suburb, postcode, mobile, phone, ema
       <table class="doc-table" style="font-size:.82rem;">
         <tr style="background:#eaf2e6;font-weight:700;"><td>Service</td><td>Standard</td><td>After Hours</td><td>Saturday</td><td>Sunday</td><td>Public Holiday</td></tr>
         <tr><td>Individual social support</td><td>$100</td><td>$116</td><td>$145</td><td>$190</td><td>$235</td></tr>
-        <tr><td>Day Care Centre (per visit &#8211; Our Client)</td><td colspan="5">$50</td></tr>
+        <tr><td>Day Care Centre (per visit &#8211; Our Client)</td><td colspan="5">$30</td></tr>
         <tr><td>Day Care Centre (per visit &#8211; External Client)</td><td colspan="5">$120</td></tr>
       </table>
 
@@ -4938,7 +5003,7 @@ function doc5_SelfManaged(name, address, street, suburb, postcode, mobile, phone
       <table class="doc-table" style="font-size:.82rem;">
         <tr style="background:#eaf2e6;font-weight:700;"><td>Service</td><td>Standard</td><td>After Hours</td><td>Saturday</td><td>Sunday</td><td>Public Holiday</td></tr>
         <tr><td>Registered Nurse Home Visit</td><td>$160</td><td>$190</td><td>$240</td><td>$320</td><td>$400</td></tr>
-        <tr><td>Enrolled Nurse Telehealth</td><td>$110</td><td>$130</td><td>$165</td><td>$220</td><td>$275</td></tr>
+        <tr><td>Registered Nurse Telehealth</td><td>$110</td><td>$130</td><td>$165</td><td>$220</td><td>$275</td></tr>
         <tr><td>Enrolled Nurse Home Visit</td><td>$140</td><td>$165</td><td>$210</td><td>$280</td><td>$350</td></tr>
         <tr><td>Nursing Assistant Service</td><td>$110</td><td>$130</td><td>$165</td><td>$220</td><td>$275</td></tr>
         <tr><td>Nursing Care Consumables</td><td colspan="5">Actual Cost</td></tr>
@@ -4972,7 +5037,7 @@ function doc5_SelfManaged(name, address, street, suburb, postcode, mobile, phone
       <table class="doc-table" style="font-size:.82rem;">
         <tr style="background:#eaf2e6;font-weight:700;"><td>Service</td><td>Standard</td><td>After Hours</td><td>Saturday</td><td>Sunday</td><td>Public Holiday</td></tr>
         <tr><td>Individual social support</td><td>$100</td><td>$116</td><td>$145</td><td>$190</td><td>$235</td></tr>
-        <tr><td>Day Care Centre (per visit &#8211; Our Client)</td><td colspan="5">$50</td></tr>
+        <tr><td>Day Care Centre (per visit &#8211; Our Client)</td><td colspan="5">$30</td></tr>
         <tr><td>Day Care Centre (per visit &#8211; External Client)</td><td colspan="5">$120</td></tr>
       </table>
 
@@ -4991,13 +5056,12 @@ function doc5_SelfManaged(name, address, street, suburb, postcode, mobile, phone
         <tr><td>Remedial massage</td><td>$160/hr</td></tr>
       </table>
 
-      <p style="font-size:.85rem;font-weight:700;color:var(--odc-green);margin-top:10px;">Transport</p>
+      <p style="font-size:.85rem;font-weight:700;color:var(--odc-green);margin-top:10px;">Direct Transport (Per Trip)</p>
       <table class="doc-table" style="font-size:.82rem;">
-        <tr style="background:#eaf2e6;font-weight:700;"><td>Distance</td><td>Standard</td><td>After Hours</td><td>Saturday</td><td>Sunday</td><td>Public Holiday</td></tr>
-        <tr><td>1&#8211;15KM</td><td>$65</td><td>$80</td><td>$95</td><td>$110</td><td>$130</td></tr>
-        <tr><td>16&#8211;22.5KM</td><td>$95</td><td>$110</td><td>$125</td><td>$140</td><td>$155</td></tr>
-        <tr><td>23&#8211;30KM</td><td>$130</td><td>$145</td><td>$160</td><td>$175</td><td>$190</td></tr>
-        <tr><td>Over 30KM</td><td colspan="5">Per Quoted</td></tr>
+        <tr><td>1&#8211;5KM</td><td>$10</td><td>15&#8211;20KM</td><td>$25</td></tr>
+        <tr><td>5&#8211;10KM</td><td>$15</td><td>20&#8211;25KM</td><td>$30</td></tr>
+        <tr><td>10&#8211;15KM</td><td>$20</td><td>25&#8211;30KM</td><td>$40</td></tr>
+        <tr><td>Over 30KM</td><td colspan="3">Per Quoted</td></tr>
       </table>
 
       <p style="font-size:.85rem;font-weight:700;color:var(--odc-green);margin-top:10px;">Everyday Living &#8211; Domestic Assistance</p>
