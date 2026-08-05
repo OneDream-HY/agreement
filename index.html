@@ -410,11 +410,25 @@
     }
     .ff.empty { color: transparent !important; border-bottom-color: #1a4f8a !important; }
 
-    /* Common keep-together blocks */
+    /* Common keep-together blocks — MUST include .sig-slot so signature
+       lines don't get sliced in half between pages. Also add table blocks
+       used for key-value pairs so their label + value stay together. */
     .doc-info-box, .doc-note, .alert, .sig-row, .acknowledgement,
-    .form-section, fieldset, blockquote {
-      page-break-inside: avoid; break-inside: avoid;
+    .form-section, fieldset, blockquote,
+    .sig-slot, .sig-slot.applied, .sig-slot img,
+    .sign-block, .sign-row,
+    tr, .doc-table tr {
+      page-break-inside: avoid !important; break-inside: avoid !important;
     }
+    /* Signature slot containers — force onto a single page as a whole unit */
+    .sig-slot { display: inline-block !important; }
+    /* Prevent tables from breaking awkwardly on the last row (orphan) */
+    table, .doc-table {
+      page-break-inside: auto;
+      break-inside: auto;
+    }
+    /* Also keep any span/label that contains an ff-inline printed value together */
+    .ff-inline-print-shim { page-break-inside: avoid; break-inside: avoid; display: inline; }
 
     /* Avoid orphans/widows in body text */
     p, li { orphans: 3; widows: 3; }
