@@ -351,12 +351,21 @@
   }
 
   @media print {
-    /* Set @page margin to 0 and give body its own margins — this pushes the
-       browser's auto date/URL/filename header/footer out of the printable
-       area so Chrome/Safari won't render them. The visible content still
-       has proper margins via body padding below. */
-    @page { size: A4; margin: 0; }
-    body { margin: 14mm 12mm 16mm !important; }
+    /* Give proper page margins + a custom "Page X of Y" counter in the top-right
+       corner. Chrome/Edge honour the @top-right margin-box; Safari ignores it
+       silently (Safari users should enable Safari's own Print Headers/Footers). */
+    @page {
+      size: A4;
+      margin: 14mm 12mm 20mm;
+      @bottom-right {
+        content: "Page " counter(page) " of " counter(pages);
+        font-family: Arial, sans-serif;
+        font-size: 9pt;
+        color: #666;
+        padding-bottom: 4mm;
+      }
+    }
+    body { margin: 0 !important; }
     * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
     .no-print { display: none !important; }
     /* Only print the documents panel (starting from Participant Intake Checklist) */
